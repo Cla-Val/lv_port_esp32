@@ -27,6 +27,8 @@ extern "C" {
 #include "ili9486.h"
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1107
 #include "sh1107.h"
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
+#include "sh1108.h"
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SSD1306
 #include "ssd1306.h"
 #endif

@@ -76,7 +76,9 @@ void lvgl_driver_init(void)
 
 #ifdef CONFIG_LVGL_TFT_DISPLAY_PROTOCOL_SPI
 #ifdef SHARED_SPI_BUS
-
+//
+// NOTE that we don't has no steenkin touchpad, so the following is irrelevant.
+//
 static void configure_shared_spi_bus(void)
 {
 	/* Shared SPI bus configuration */
@@ -95,6 +97,8 @@ static void configure_shared_spi_bus(void)
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_HX8357
 		.max_transfer_sz = DISP_BUF_SIZE * 2
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1107
+		.max_transfer_sz = DISP_BUF_SIZE * 2
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
 		.max_transfer_sz = DISP_BUF_SIZE * 2
 #elif CONFIG_LVGL_TFT_DISPLAY_CONTROLLER == TFT_CONTROLLER_ILI9486
 		.max_transfer_sz = DISP_BUF_SIZE * 2

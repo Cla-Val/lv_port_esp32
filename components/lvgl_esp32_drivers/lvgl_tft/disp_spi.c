@@ -57,12 +57,13 @@ static transaction_cb_t chained_post_cb;
  *   GLOBAL FUNCTIONS
  **********************/
 void disp_spi_add_device_config(spi_host_device_t host, spi_device_interface_config_t *devcfg)
-{
-    chained_post_cb=devcfg->post_cb;
-    devcfg->post_cb=spi_ready;
-    esp_err_t ret=spi_bus_add_device(host, devcfg, &spi);
-    assert(ret==ESP_OK);
-}
+	{
+	chained_post_cb=devcfg->post_cb;
+	devcfg->post_cb=spi_ready;				//-This routine will be called - in IRQ
+											// context - when a transaction is done.
+	esp_err_t ret=spi_bus_add_device(host, devcfg, &spi);
+	assert(ret==ESP_OK);
+	}
 
 void disp_spi_add_device(spi_host_device_t host)
 {
@@ -73,6 +74,8 @@ void disp_spi_add_device(spi_host_device_t host)
         .clock_speed_hz=26*1000*1000,           // Clock out at 26 MHz
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1107
         .clock_speed_hz=8*1000*1000,            // Clock out at 8 MHz
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
+        .clock_speed_hz=2*1000*1000,            // Clock out at 2 MHz
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_ILI9486
         .clock_speed_hz=24*1000*1000,           //Clock out at 24 MHz
 #else
@@ -81,6 +84,8 @@ void disp_spi_add_device(spi_host_device_t host)
 
 #if defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_ST7789
         .mode=2,                                // SPI mode 2
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
+        .mode=3,
 #else
 	    .mode=0,				                // SPI mode 0
 #endif
@@ -117,9 +122,10 @@ void disp_spi_init(void)
             .max_transfer_sz = DISP_BUF_SIZE * 2,
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1107
 		.max_transfer_sz = DISP_BUF_SIZE * 2
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
+		.max_transfer_sz = DISP_BUF_SIZE * 2
 #endif
     };
-
     //Initialize the SPI bus
     ret=spi_bus_initialize(TFT_SPI_HOST, &buscfg, 1);
     assert(ret==ESP_OK);
