@@ -67,6 +67,8 @@
 #define LV_COLOR_16_SWAP   1
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1107
 #define LV_COLOR_16_SWAP   0
+#elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SH1108
+#define LV_COLOR_16_SWAP   0
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_SSD1306
 #define LV_COLOR_16_SWAP   0
 #elif defined CONFIG_LVGL_TFT_DISPLAY_CONTROLLER_ILI9486
@@ -481,7 +483,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_BTNM     1
 
 /*Calendar (dependencies: -)*/
-#define LV_USE_CALENDAR 1
+#define LV_USE_CALENDAR 0
 
 /*Canvas (dependencies: lv_img)*/
 #define LV_USE_CANVAS   1
@@ -490,7 +492,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_CB       1
 
 /*Chart (dependencies: -)*/
-#define LV_USE_CHART    1
+#define LV_USE_CHART    0
 #if LV_USE_CHART
 #  define LV_CHART_AXIS_TICK_LABEL_MAX_LEN    20
 #endif
@@ -499,7 +501,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_CONT     1
 
 /*Color picker (dependencies: -*/
-#define LV_USE_CPICKER   1
+#define LV_USE_CPICKER   0
 
 /*Drop down list (dependencies: lv_page, lv_label, lv_symbol_def.h)*/
 #define LV_USE_DDLIST    1
@@ -515,7 +517,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_IMG      1
 
 /*Image Button (dependencies: lv_btn*/
-#define LV_USE_IMGBTN   1
+#define LV_USE_IMGBTN   0
 #if LV_USE_IMGBTN
 /*1: The imgbtn requires left, mid and right parts and the width can be set freely*/
 #  define LV_IMGBTN_TILED 0

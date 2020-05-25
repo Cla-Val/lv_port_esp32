@@ -134,6 +134,35 @@ void disp_spi_init(void)
     disp_spi_add_device(TFT_SPI_HOST);
 }
 
+//-NOTE that in the following two routines, it is assumed that the caller has set the D/C
+// (A0) line correctly.
+//
+void disp_spi_send_cmd(const uint8_t * data, uint16_t length)
+	{
+	if (length == 0) return;           //no need to send anything
+
+	while(spi_trans_in_progress);
+
+	spi_transaction_t 
+		t;
+		
+	bzero(&t,sizeof(t));
+	t.length=length * 8;					//-Transaction length in BITS, remember ...
+	if (length <= 4)						//-4 bytes or fewer, can pack the data into
+		{									// the transaction without passing by a
+		t.flags=SPI_TRANS_USE_TXDATA;		// buffer
+		memcpy(t.tx_data,data,length);
+		}
+	else
+		t.tx_buffer = data;
+
+	spi_trans_in_progress = true;
+	spi_color_sent = false;             //Mark the "lv_flush_ready" NOT needs to be called in "spi_ready"
+	spi_device_queue_trans(spi, &t, portMAX_DELAY);
+	//	spi_transaction_t *ta = &t;
+	//	spi_device_get_trans_result(spi,&ta, portMAX_DELAY);
+	}
+
 void disp_spi_send_data(uint8_t * data, uint16_t length)
 {
     if (length == 0) return;           //no need to send anything

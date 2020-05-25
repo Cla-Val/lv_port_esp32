@@ -28,7 +28,7 @@ typedef struct
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-static void sh1108_send_cmd(uint8_t *cmd, uint16_t length);
+static void sh1108_send_cmd(const uint8_t *cmd, uint8_t length);
 static void sh1108_send_data(void * data, uint16_t length);
 static void sh1108_send_color(void * data, uint16_t length);
 
@@ -177,10 +177,24 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
     row1 = area->y1>>3;
     row2 = area->y2>>3;
 #endif
-    for(int i = row1; i < row2+1; i++){
-	    sh1108_send_cmd(0x10 | columnHigh);         // Set Higher Column Start Address for Page Addressing Mode
-	    sh1108_send_cmd(0x00 | columnLow);          // Set Lower Column Start Address for Page Addressing Mode
-	    sh1108_send_cmd(0xB0 | i);                  // Set Page Start Address for Page Addressing Mode
+    for(int i = row1; i < row2+1; i++)
+		{
+		uint8_t
+			cmd[4];
+/*			
+		cmd[0]=0x10 | columnHigh;
+	    sh1108_send_cmd(cmd,1);
+		cmd[0]=0x00 | columnLow;
+	    sh1108_send_cmd(cmd,1);
+		cmd[0]=0xB0;
+		cmd[1]=i;
+	    sh1108_send_cmd(cmd,2); 
+*/
+		cmd[0]=0x10 | columnHigh;
+		cmd[1]=0x00 | columnLow;
+		cmd[2]=0xB0;
+		cmd[3]=i;
+	    sh1108_send_cmd(cmd,4); 
 	    size = area->y2 - area->y1 + 1;
 #if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_HEIGHT;
@@ -188,7 +202,7 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_WIDTH;
 #endif
         sh1108_send_color( (void *) ptr, size);
-    }
+		}
 }
 
 void sh1108_rounder(struct _disp_drv_t * disp_drv, lv_area_t *area)
@@ -218,7 +232,7 @@ void sh1108_sleep_out()
  **********************/
 
 
-static void sh1108_send_cmd(uint8_t &cmd, uint8_t length)
+static void sh1108_send_cmd(const uint8_t *cmd, uint8_t length)
 	{
     while(disp_spi_is_busy()) {}
     gpio_set_level(SH1108_DC, 0);	 /*Command mode*/
