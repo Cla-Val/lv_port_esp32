@@ -483,7 +483,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_BTNM     1
 
 /*Calendar (dependencies: -)*/
-#define LV_USE_CALENDAR 0
+#define LV_USE_CALENDAR 1
 
 /*Canvas (dependencies: lv_img)*/
 #define LV_USE_CANVAS   1
@@ -492,7 +492,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_CB       1
 
 /*Chart (dependencies: -)*/
-#define LV_USE_CHART    0
+#define LV_USE_CHART    1
 #if LV_USE_CHART
 #  define LV_CHART_AXIS_TICK_LABEL_MAX_LEN    20
 #endif
@@ -501,7 +501,7 @@ typedef void * lv_obj_user_data_t;
 #define LV_USE_CONT     1
 
 /*Color picker (dependencies: -*/
-#define LV_USE_CPICKER   0
+#define LV_USE_CPICKER   1
 
 /*Drop down list (dependencies: lv_page, lv_label, lv_symbol_def.h)*/
 #define LV_USE_DDLIST    1
