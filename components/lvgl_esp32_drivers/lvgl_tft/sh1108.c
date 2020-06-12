@@ -96,7 +96,7 @@ void sh1108_init(void)
 				{{0x81,0xD0},2},			//-Contrast
 				{{0xA0},1},					//-Segment remapping
 				{{0xA6},1},					//-Normal display
-				{{0xA9,0x02},2},			//-Select resolution 160 x 128
+				{{0xA9,0x02},2},			//-Select resolution 128 x 160
 				{{0xAD,0x80},2},			//-External Vpp
 				{{0xC0},1},					//-Common scan direction
 				{{0xD5,0xF1},2},			//-Divide ratio 100 Hz
@@ -164,8 +164,14 @@ void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t b
 
 void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_map)
 {
-    uint8_t columnLow = area->x1 & 0x0F;
-	uint8_t columnHigh = (area->x1 >> 4) & 0x0F;
+    uint8_t 
+		columnLow = (area->x1 + 16) & 0x0F;
+	uint8_t 
+		columnHigh = ((area->x1 + 16) >> 4) & 0x0F;
+										//-There's an offset of 16 to the column
+										// (COM) we send out, 'cos when we're in
+										// 128 COM * 160 SEG mode that's the way
+										// it's mapped ...
     uint8_t row1 = 0, row2 = 0;
     uint32_t size = 0;
     void *ptr;

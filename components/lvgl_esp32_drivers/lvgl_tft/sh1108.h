@@ -20,8 +20,8 @@ extern "C" {
 /*********************
  *      DEFINES
  *********************/
-#define DISP_BUF_SIZE   (CONFIG_LVGL_DISPLAY_WIDTH*CONFIG_LVGL_DISPLAY_HEIGHT)
-
+#define DISP_BUF_SIZE   ((CONFIG_LVGL_DISPLAY_WIDTH*CONFIG_LVGL_DISPLAY_HEIGHT) / 8)
+										//-Because 8 bits per pixel ...
 #define SH1108_DC   CONFIG_LVGL_DISP_PIN_DC
 #define SH1108_RST  CONFIG_LVGL_DISP_PIN_RST
 
