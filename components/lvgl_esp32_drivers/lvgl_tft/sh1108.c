@@ -59,8 +59,8 @@ void sh1108_init(void)
     	{0x81, {0}, 0},	// Set display contrast
     	{0x2F, {0}, 0},	// ...value
     	{0x20, {0}, 0},	// Set memory mode
-    	{0xA0, {0}, 0},	// Non-rotated display  
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
+    	{0xA0, {0}, 0},	// Non-rotated display
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
     	{0xC8, {0}, 0},	// flipped vertical
 #elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
     	{0xC7, {0}, 0},	// flipped vertical
@@ -83,7 +83,7 @@ void sh1108_init(void)
     	{0xA7, {0}, 0},	// inverted display
 #else
     	{0xA6, {0}, 0},	// Non-inverted display
-#endif 
+#endif
     	{0xAF, {0}, 0},	// Turn display on
         {0, {0}, 0xff},
 	};
@@ -108,6 +108,20 @@ void sh1108_init(void)
 				{{},0}						//-End of command list
 				};
 
+    gpio_config_t
+		io_conf_out =
+			{
+			.intr_type = GPIO_PIN_INTR_DISABLE,
+										//-No interrupts
+			.mode = GPIO_MODE_OUTPUT,	//-Mode is GPIO OUTPUT
+			.pin_bit_mask = ((1ULL << SH1108_DC) | (1ULL << SH1108_RST)),
+										//-Bitmap of GPIOs to configure
+			.pull_down_en = GPIO_PULLDOWN_DISABLE,
+										//-No pullups (not an input)
+			.pull_up_en = GPIO_PULLUP_DISABLE
+			};							// ... and no pulldown either.
+    if (gpio_config(&io_conf_out) != ESP_OK)
+		printf("error configuring outputs \n");
 	//Initialize non-SPI GPIOs
 	gpio_set_direction(SH1108_DC, GPIO_MODE_OUTPUT);
 	gpio_set_direction(SH1108_RST, GPIO_MODE_OUTPUT);
@@ -118,6 +132,7 @@ void sh1108_init(void)
 	gpio_set_level(SH1108_RST, 1);
 	vTaskDelay(100 / portTICK_RATE_MS);
 
+printf("Initialising controller\n");
 	//Send all the commands
 /*
 	uint16_t cmd = 0;
@@ -136,14 +151,14 @@ void sh1108_init(void)
 	}
 
 void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
-        lv_color_t color, lv_opa_t opa) 
+        lv_color_t color, lv_opa_t opa)
 {
 	/* buf_w will be ignored, the configured CONFIG_LVGL_DISPLAY_HEIGHT and _WIDTH,
-	   and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */ 		
+	   and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */
     uint16_t byte_index = 0;
     uint8_t  bit_index = 0;
 
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
 	byte_index = y + (( x>>3 ) * CONFIG_LVGL_DISPLAY_HEIGHT);
 	bit_index  = x & 0x7;
 #elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
@@ -164,9 +179,9 @@ void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t b
 
 void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_map)
 {
-    uint8_t 
+    uint8_t
 		columnLow = (area->x1 + 16) & 0x0F;
-	uint8_t 
+	uint8_t
 		columnHigh = ((area->x1 + 16) >> 4) & 0x0F;
 										//-There's an offset of 16 to the column
 										// (COM) we send out, 'cos when we're in
@@ -174,12 +189,17 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 										// it's mapped ...
     uint8_t row1 = 0, row2 = 0;
     uint32_t size = 0;
-    void *ptr;
+    char *ptr;
 
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
+printf("Flushing buffer, coords %d:%d - %d:%d\n",
+    area->x1,
+    area->y1,
+    area->x2,
+    area->y2);
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
     row1 = area->x1>>3;
     row2 = area->x2>>3;
-#else 
+#else
     row1 = area->y1>>3;
     row2 = area->y2>>3;
 #endif
@@ -187,26 +207,29 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 		{
 		uint8_t
 			cmd[4];
-/*			
+/*
 		cmd[0]=0x10 | columnHigh;
 	    sh1108_send_cmd(cmd,1);
 		cmd[0]=0x00 | columnLow;
 	    sh1108_send_cmd(cmd,1);
 		cmd[0]=0xB0;
 		cmd[1]=i;
-	    sh1108_send_cmd(cmd,2); 
+	    sh1108_send_cmd(cmd,2);
 */
 		cmd[0]=0x10 | columnHigh;
 		cmd[1]=0x00 | columnLow;
 		cmd[2]=0xB0;
 		cmd[3]=i;
-	    sh1108_send_cmd(cmd,4); 
+	    sh1108_send_cmd(cmd,4);
 	    size = area->y2 - area->y1 + 1;
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_HEIGHT;
-#else 
+#else
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_WIDTH;
 #endif
+        for (int j = 0; j < size; j++)
+            printf("%02X ",*(ptr + j));
+        printf(" size = %d\n",size);
         sh1108_send_color( (void *) ptr, size);
 		}
 }
@@ -221,7 +244,7 @@ void sh1108_sleep_in()
 	{
 	uint8_t
 		cmd = 0xAE;
-		
+
 	sh1108_send_cmd(&cmd,1);
 	}
 
@@ -229,7 +252,7 @@ void sh1108_sleep_out()
 	{
 	uint8_t
 		cmd = 0xAF;
-		
+
 	sh1108_send_cmd(&cmd,1);
 	}
 
