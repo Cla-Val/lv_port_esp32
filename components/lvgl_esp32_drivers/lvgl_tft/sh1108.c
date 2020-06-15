@@ -115,18 +115,18 @@ static bool
 	dump_pixels = true;
 static int
 	pixel_count = 0;
-	
+
 void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
-        lv_color_t color, lv_opa_t opa) 
+        lv_color_t color, lv_opa_t opa)
 	{
 	/* buf_w will be ignored, the configured CONFIG_LVGL_DISPLAY_HEIGHT and _WIDTH,
-	and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */ 		
+	and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */
 	uint16_t
 		byte_index = 0;
-	uint8_t 
+	uint8_t
 		bit_index = 0;
 
-//	#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
+//	#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
 //	byte_index = y + (( x>>3 ) * CONFIG_LVGL_DISPLAY_HEIGHT);
 //	bit_index  = x & 0x7;
 //	#elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
@@ -167,12 +167,12 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 										// (COM) we send out, 'cos when we're in
 										// 128 COM * 160 SEG mode that's the way
 										// it's mapped ...
-    uint8_t 
-		row1 = 0, 
+    uint8_t
+		row1 = 0,
 		row2 = 0;
-    uint32_t 
+    uint32_t
 		size = 0;
-    void 
+    void
 		*ptr;
 
 	dump_pixels=true;
@@ -184,13 +184,13 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 			area->x2,
 			area->y2);
 /**/
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
-    row1 = area->x1>>3;
-    row2 = area->x2>>3;
-#else
+//#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
+//    row1 = area->x1>>3;
+//    row2 = area->x2>>3;
+//#else
     row1 = area->y1>>3;
     row2 = area->y2>>3;
-#endif
+//#endif
     for(int i = row1; i < row2+1; i++)
 		{
 		uint8_t
@@ -200,12 +200,15 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 		cmd[2]=0xB0;
 		cmd[3]=i;
 	    sh1108_send_cmd(cmd,4);
-	    size = area->y2 - area->y1 + 1;
+	    size = area->x2 - area->x1 + 1;
+/*
 #if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_HEIGHT;
 #else
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_WIDTH;
 #endif
+*/
+        ptr = color_map + i * 128;
         sh1108_send_color( (void *) ptr, size);
 		}
 }
