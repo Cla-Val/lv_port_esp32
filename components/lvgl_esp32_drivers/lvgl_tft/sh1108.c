@@ -59,8 +59,8 @@ void sh1108_init(void)
     	{0x81, {0}, 0},	// Set display contrast
     	{0x2F, {0}, 0},	// ...value
     	{0x20, {0}, 0},	// Set memory mode
-    	{0xA0, {0}, 0},	// Non-rotated display  
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
+    	{0xA0, {0}, 0},	// Non-rotated display
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
     	{0xC8, {0}, 0},	// flipped vertical
 #elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
     	{0xC7, {0}, 0},	// flipped vertical
@@ -83,7 +83,7 @@ void sh1108_init(void)
     	{0xA7, {0}, 0},	// inverted display
 #else
     	{0xA6, {0}, 0},	// Non-inverted display
-#endif 
+#endif
     	{0xAF, {0}, 0},	// Turn display on
         {0, {0}, 0xff},
 	};
@@ -119,6 +119,7 @@ void sh1108_init(void)
 	gpio_set_level(SH1108_RST, 1);
 	vTaskDelay(100 / portTICK_RATE_MS);
 
+printf("Initialising controller\n");
 	//Send all the commands
 /*
 	uint16_t cmd = 0;
@@ -184,9 +185,9 @@ void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t b
 
 void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_map)
 {
-    uint8_t 
+    uint8_t
 		columnLow = (area->x1 + 16) & 0x0F;
-	uint8_t 
+	uint8_t
 		columnHigh = ((area->x1 + 16) >> 4) & 0x0F;
 										//-There's an offset of 16 to the column
 										// (COM) we send out, 'cos when we're in
@@ -212,7 +213,7 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 #if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
     row1 = area->x1>>3;
     row2 = area->x2>>3;
-#else 
+#else
     row1 = area->y1>>3;
     row2 = area->y2>>3;
 #endif
@@ -220,26 +221,29 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 		{
 		uint8_t
 			cmd[4];
-/*			
+/*
 		cmd[0]=0x10 | columnHigh;
 	    sh1108_send_cmd(cmd,1);
 		cmd[0]=0x00 | columnLow;
 	    sh1108_send_cmd(cmd,1);
 		cmd[0]=0xB0;
 		cmd[1]=i;
-	    sh1108_send_cmd(cmd,2); 
+	    sh1108_send_cmd(cmd,2);
 */
 		cmd[0]=0x10 | columnHigh;
 		cmd[1]=0x00 | columnLow;
 		cmd[2]=0xB0;
 		cmd[3]=i;
-	    sh1108_send_cmd(cmd,4); 
+	    sh1108_send_cmd(cmd,4);
 	    size = area->y2 - area->y1 + 1;
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_HEIGHT;
-#else 
+#else
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_WIDTH;
 #endif
+        for (int j = 0; j < size; j++)
+            printf("%02X ",*(ptr + j));
+        printf(" size = %d\n",size);
         sh1108_send_color( (void *) ptr, size);
 		}
 }
@@ -254,7 +258,7 @@ void sh1108_sleep_in()
 	{
 	uint8_t
 		cmd = 0xAE;
-		
+
 	sh1108_send_cmd(&cmd,1);
 	}
 
@@ -262,7 +266,7 @@ void sh1108_sleep_out()
 	{
 	uint8_t
 		cmd = 0xAF;
-		
+
 	sh1108_send_cmd(&cmd,1);
 	}
 
