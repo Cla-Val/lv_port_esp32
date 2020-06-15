@@ -49,45 +49,6 @@ static void sh1108_send_color(void * data, uint16_t length);
 
 void sh1108_init(void)
 	{
-    // Use Double Bytes Commands if necessary, but not Command+Data
-    // Initialization taken from https://github.com/nopnop2002/esp-idf-m5stick
-/*
-	lcd_init_cmd_t init_cmds[]={
-    	{0xAE, {0}, 0},	// Turn display off
-    	{0xDC, {0}, 0},	// Set display start line
-    	{0x00, {0}, 0},	// ...value
-    	{0x81, {0}, 0},	// Set display contrast
-    	{0x2F, {0}, 0},	// ...value
-    	{0x20, {0}, 0},	// Set memory mode
-    	{0xA0, {0}, 0},	// Non-rotated display
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
-    	{0xC8, {0}, 0},	// flipped vertical
-#elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
-    	{0xC7, {0}, 0},	// flipped vertical
-#endif
-    	{0xA8, {0}, 0},	// Set multiplex ratio
-    	{0x7F, {0}, 0},	// ...value
-    	{0xD3, {0}, 0},	// Set display offset to zero
-    	{0x60, {0}, 0},	// ...value
-    	{0xD5, {0}, 0},	// Set display clock divider
-    	{0x51, {0}, 0},	// ...value
-    	{0xD9, {0}, 0},	// Set pre-charge
-    	{0x22, {0}, 0},	// ...value
-    	{0xDB, {0}, 0},	// Set com detect
-    	{0x35, {0}, 0},	// ...value
-    	{0xB0, {0}, 0},	// Set page address
-    	{0xDA, {0}, 0},	// Set com pins
-    	{0x12, {0}, 0},	// ...value
-    	{0xA4, {0}, 0},	// output ram to display
-#if defined CONFIG_LVGL_INVERT_DISPLAY
-    	{0xA7, {0}, 0},	// inverted display
-#else
-    	{0xA6, {0}, 0},	// Non-inverted display
-#endif
-    	{0xAF, {0}, 0},	// Turn display on
-        {0, {0}, 0xff},
-	};
-*/
 	static const lcd_init_cmd_t
 		OLED_init_cmds[] =
 				{
@@ -109,7 +70,20 @@ void sh1108_init(void)
 				};
 
 	printf("sh1108_init: W:%d, H:%d\n",CONFIG_LVGL_DISPLAY_WIDTH,CONFIG_LVGL_DISPLAY_HEIGHT);
-	//Initialize non-SPI GPIOs
+    gpio_config_t
+		io_conf_out =
+			{
+			.intr_type = GPIO_PIN_INTR_DISABLE,
+										//-No interrupts
+			.mode = GPIO_MODE_OUTPUT,	//-Mode is GPIO OUTPUT
+			.pin_bit_mask = ((1ULL << SH1108_DC) | (1ULL << SH1108_RST)),
+										//-Bitmap of GPIOs to configure
+			.pull_down_en = GPIO_PULLDOWN_DISABLE,
+										//-No pullups (not an input)
+			.pull_up_en = GPIO_PULLUP_DISABLE
+			};							// ... and no pulldown either.
+    if (gpio_config(&io_conf_out) != ESP_OK)
+		printf("error configuring outputs \n");
 	gpio_set_direction(SH1108_DC, GPIO_MODE_OUTPUT);
 	gpio_set_direction(SH1108_RST, GPIO_MODE_OUTPUT);
 
@@ -210,7 +184,7 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 			area->x2,
 			area->y2);
 /**/
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
+#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE
     row1 = area->x1>>3;
     row2 = area->x2>>3;
 #else
@@ -221,15 +195,6 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 		{
 		uint8_t
 			cmd[4];
-/*
-		cmd[0]=0x10 | columnHigh;
-	    sh1108_send_cmd(cmd,1);
-		cmd[0]=0x00 | columnLow;
-	    sh1108_send_cmd(cmd,1);
-		cmd[0]=0xB0;
-		cmd[1]=i;
-	    sh1108_send_cmd(cmd,2);
-*/
 		cmd[0]=0x10 | columnHigh;
 		cmd[1]=0x00 | columnLow;
 		cmd[2]=0xB0;
@@ -241,9 +206,6 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 #else
         ptr = color_map + i * CONFIG_LVGL_DISPLAY_WIDTH;
 #endif
-        for (int j = 0; j < size; j++)
-            printf("%02X ",*(ptr + j));
-        printf(" size = %d\n",size);
         sh1108_send_color( (void *) ptr, size);
 		}
 }
@@ -292,7 +254,7 @@ static void sh1108_send_data(void * data, uint16_t length)
 static void sh1108_send_color(void * data, uint16_t length)
 {
     while(disp_spi_is_busy()) {}
-    gpio_set_level(SH1108_DC, 1);   /*Data mode*/
 	printf("    sh1108_send_color punting off %d bytes from %p\n",length,data);
+    gpio_set_level(SH1108_DC, 1);   /*Data mode*/
     disp_spi_send_colors(data, length);
 }
