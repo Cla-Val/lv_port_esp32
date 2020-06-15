@@ -108,6 +108,7 @@ void sh1108_init(void)
 				{{},0}						//-End of command list
 				};
 
+	printf("sh1108_init: W:%d, H:%d\n",CONFIG_LVGL_DISPLAY_WIDTH,CONFIG_LVGL_DISPLAY_HEIGHT);
 	//Initialize non-SPI GPIOs
 	gpio_set_direction(SH1108_DC, GPIO_MODE_OUTPUT);
 	gpio_set_direction(SH1108_RST, GPIO_MODE_OUTPUT);
@@ -135,32 +136,51 @@ void sh1108_init(void)
  		sh1108_send_cmd(OLED_init_cmds[i].cmd,OLED_init_cmds[i].nbr_bytes);
 	}
 
+static bool
+	dump_pixels = true;
+static int
+	pixel_count = 0;
+	
 void sh1108_set_px_cb(struct _disp_drv_t * disp_drv, uint8_t * buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
         lv_color_t color, lv_opa_t opa) 
-{
+	{
 	/* buf_w will be ignored, the configured CONFIG_LVGL_DISPLAY_HEIGHT and _WIDTH,
-	   and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */ 		
-    uint16_t byte_index = 0;
-    uint8_t  bit_index = 0;
+	and CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE and _PORTRAIT will be used. */ 		
+	uint16_t
+		byte_index = 0;
+	uint8_t 
+		bit_index = 0;
 
-#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
-	byte_index = y + (( x>>3 ) * CONFIG_LVGL_DISPLAY_HEIGHT);
-	bit_index  = x & 0x7;
-#elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
-    byte_index = x + (( y>>3 ) * CONFIG_LVGL_DISPLAY_WIDTH);
-    bit_index  = y & 0x7;
-#endif
+//	#if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE			
+//	byte_index = y + (( x>>3 ) * CONFIG_LVGL_DISPLAY_HEIGHT);
+//	bit_index  = x & 0x7;
+//	#elif defined CONFIG_LVGL_DISPLAY_ORIENTATION_PORTRAIT
+	byte_index = x + (( y>>3 ) * CONFIG_LVGL_DISPLAY_WIDTH);
+	bit_index  = y & 0x7;
+//	#endif
 
-// #ifndef CONFIG_LVGL_INVERT_DISPLAY
-    if ( color.full == 0 ) {
-// #else
-    // if ( color.full != 0 ) {
-// #endif
-        BIT_SET(buf[byte_index], bit_index);
-    } else {
-        BIT_CLEAR(buf[byte_index], bit_index);
-    }
-}
+//	if ( color.full == 0 )
+	if (color.full)
+		{
+		if (dump_pixels)
+			printf("Set pixel @%d:%d (byte/bit %d:%d) %p\n",x,y,byte_index,bit_index,buf);
+		BIT_SET(buf[byte_index], bit_index);
+		}
+	else
+		{
+		if (dump_pixels)
+			printf("Clr pixel @%d:%d (byte/bit %d:%d) %p\n",x,y,byte_index,bit_index,buf);
+		BIT_CLEAR(buf[byte_index], bit_index);
+		}
+	if (dump_pixels)
+		{
+		if ((++pixel_count) >= 10)
+			{
+			pixel_count=0;
+			dump_pixels=false;
+			}
+		}
+	}
 
 void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_map)
 {
@@ -172,10 +192,23 @@ void sh1108_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * colo
 										// (COM) we send out, 'cos when we're in
 										// 128 COM * 160 SEG mode that's the way
 										// it's mapped ...
-    uint8_t row1 = 0, row2 = 0;
-    uint32_t size = 0;
-    void *ptr;
+    uint8_t 
+		row1 = 0, 
+		row2 = 0;
+    uint32_t 
+		size = 0;
+    void 
+		*ptr;
 
+	dump_pixels=true;
+/**/
+	printf("Flushing buffer @%p, %d:%d - %d:%d\n",
+			color_map,
+			area->x1,
+			area->y1,
+			area->x2,
+			area->y2);
+/**/
 #if defined CONFIG_LVGL_DISPLAY_ORIENTATION_LANDSCAPE		
     row1 = area->x1>>3;
     row2 = area->x2>>3;
@@ -256,5 +289,6 @@ static void sh1108_send_color(void * data, uint16_t length)
 {
     while(disp_spi_is_busy()) {}
     gpio_set_level(SH1108_DC, 1);   /*Data mode*/
+	printf("    sh1108_send_color punting off %d bytes from %p\n",length,data);
     disp_spi_send_colors(data, length);
 }
